@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 흙수저 탈출 2015
 
-## Getting Started
+2015년부터 시작하는 모바일 감성 자산 증식 시뮬레이션입니다. 주식, 코인, 부동산, 직장, 은행, 로또, 토토, 스트레스 관리를 오가며 목표 자산 2억 원을 향해 진행합니다.
 
-First, run the development server:
+## 실행
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+개발 서버가 켜지면 브라우저에서 `http://localhost:3000`을 엽니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+PowerShell 실행 정책 때문에 `npm` 명령이 막히는 환경에서는 아래처럼 실행할 수 있습니다.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm.cmd run dev
+```
 
-## Learn More
+## 주요 스크립트
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm.cmd run lint
+npm.cmd run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 게임 루프
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- 한 턴은 1주입니다.
+- 진행 상황은 브라우저 `localStorage`에 자동 저장되고, 새로고침하면 이어서 불러옵니다.
+- 4주가 지나면 다음 달로 넘어가며 급여, 생활비, 월세, 대출 이자, 예금 이자, 배당금이 정산됩니다.
+- 역사 이벤트와 랜덤 이벤트가 시장, 금리, 생활비, 스트레스, 로또 보너스 등에 영향을 줍니다.
+- 채팅 앱에는 뉴스, 은행 정산, 직장 상사, 가족, 친구, 찌라시 메시지가 쌓입니다.
 
-## Deploy on Vercel
+## 앱 구성
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `평민문S`: 주식 관심종목, 종목 상세, 매수/매도, 잔고 확인
+- `비트고수`: 코인 목록과 거래 진입
+- `흙수저은행`: 예금, 출금, 대출, 상환, 신용 점수 확인
+- `복덕방`: 전월세와 자가 매매, 주거비와 스트레스 완화 관리
+- `사람인`: 경력에 따른 이직, 퇴사, 월급과 업무 스트레스 관리
+- `일확천금`: 로또 구매와 다음 턴 추첨
+- `배트맨`: 주간 승부예측 베팅
+- `소확행`: 스트레스 해소 활동
+- `까톡`: 이벤트와 생활 메시지 확인
+- `설정`: 저장 상태 확인과 새 게임 시작
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 개발 메모
+
+- 상태 관리는 `zustand` 기반의 `src/store/gameStore.ts`에 모여 있습니다.
+- 주식/코인 기본 데이터는 `src/data/stocks.ts`, 이벤트 데이터는 `src/data/events.ts`에서 관리합니다.
+- 공통 가격 변동 계산은 `src/utils/calculatePriceChange.ts`를 사용합니다.
