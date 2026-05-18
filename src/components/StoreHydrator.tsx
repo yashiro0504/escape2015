@@ -11,15 +11,26 @@ export default function StoreHydrator() {
       setHydrated(true);
     });
 
-    useGameStore.persist.rehydrate();
+    try {
+      useGameStore.persist.rehydrate();
+    } catch (e) {
+      console.warn("Hydration failed:", e);
+      setHydrated(true);
+    }
     
     // 이미 하이드레이션이 끝난 경우
     if (useGameStore.persist.hasHydrated()) {
       setHydrated(true);
     }
 
+    // 무한 로딩을 방지하기 위한 강제 해제 타임아웃 (0.5초)
+    const timeoutId = setTimeout(() => {
+      setHydrated(true);
+    }, 500);
+
     return () => {
       unsubFinishHydration();
+      clearTimeout(timeoutId);
     };
   }, []);
 

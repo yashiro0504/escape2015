@@ -3,6 +3,7 @@
 import React from 'react';
 import StoreHydrator from './StoreHydrator';
 import AchievementNotification from './AchievementNotification';
+import SystemAlertNotification from './SystemAlertNotification';
 
 export default function PhoneWrapper({ children }: { children: React.ReactNode }) {
   return (
@@ -19,6 +20,7 @@ export default function PhoneWrapper({ children }: { children: React.ReactNode }
         </div>
         <StoreHydrator />
         <AchievementNotification />
+        <SystemAlertNotification />
       </div>
     </div>
   );

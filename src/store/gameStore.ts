@@ -39,11 +39,31 @@ interface MarketPrice {
   delisted?: boolean;
 }
 
+export interface SystemAlert {
+  id: number;
+  title: string;
+  message: string;
+  type: 'good' | 'bad' | 'info';
+}
+
 interface LottoResult {
   winningNumbers: number[];
   results: { numbers: number[]; matchCount: number; prize: number }[];
   totalPrize: number;
   multiplier: number;
+}
+
+export interface TradeRecord {
+  id: number;
+  date: string;
+  stockId: string;
+  stockName: string;
+  type: 'buy' | 'sell';
+  amount: number;
+  price: number;
+  totalAmount: number;
+  realizedProfit?: number;
+  realizedProfitRate?: number;
 }
 
 interface GameState {
@@ -85,6 +105,9 @@ interface GameState {
   playerName: string;
   endGameReason: string;
 
+  tradeHistory: TradeRecord[];
+  systemAlerts: SystemAlert[];
+
   playCount: number;
   clearedCount: number;
   currentBackgroundId: string;
@@ -118,6 +141,7 @@ interface GameState {
   resetGame: () => void;
   toggleSound: () => void;
   toggleHaptic: () => void;
+  removeSystemAlert: (id: number) => void;
 }
 
 type GameData = Omit<
@@ -145,6 +169,7 @@ type GameData = Omit<
   | 'clearNewlyUnlockedAchievements'
   | 'toggleSound'
   | 'toggleHaptic'
+  | 'removeSystemAlert'
 >;
 
 import { STARTING_BACKGROUNDS } from '../data/backgrounds';
@@ -213,6 +238,8 @@ const createInitialGameData = (backgroundId: string = 'default'): GameData => {
     newlyUnlockedAchievements: [],
     soundEnabled: true,
     hapticEnabled: true,
+    tradeHistory: [],
+    systemAlerts: [],
   };
 };
 
@@ -402,6 +429,7 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
 
     // 까톡 메시지 도착
     const nextChatMessages = [...state.chatMessages];
+    const nextSystemAlerts: SystemAlert[] = [];
     
     // 찌라시(Rumor) 팩트체크 결과 알림 (지난주 찌라시)
     state.activeRumors.forEach(rumor => {
@@ -514,9 +542,14 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
       const selectedMomMsg = MOM_MESSAGES[Math.floor(Math.random() * MOM_MESSAGES.length)];
       if (selectedMomMsg.includes("10만원 입금")) {
         extraCash += 100000;
+        nextSystemAlerts.push({
+          id: getNextMessageId(),
+          title: "엄마의 용돈",
+          message: `${selectedMomMsg}\n\n💰 현금: +100,000원`,
+          type: 'good'
+        });
       }
       nextChatMessages.push({
-
         id: getNextMessageId(),
         sender: "엄마",
         text: selectedMomMsg,
@@ -578,6 +611,20 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
            }
         }
       });
+
+      // 돈 관련 이벤트(랜덤 이벤트) 알림 띄우기
+      const isRandomEvent = RANDOM_EVENTS.some(re => re.id === n.id);
+      const isFinancialScam = n.id === 'realestate_scam_event';
+      if (isRandomEvent || isFinancialScam) {
+        if (effectSummary || isFinancialScam) {
+           nextSystemAlerts.push({
+             id: getNextMessageId(),
+             title: `[알림] ${n.title}`,
+             message: `${n.description}${effectSummary ? '\n' + effectSummary : ''}`,
+             type: effectSummary.includes('-') || isFinancialScam ? 'bad' : 'good'
+           });
+        }
+      }
     });
 
     // 로또 추첨 (이전 턴에 구매한 티켓)
@@ -633,6 +680,27 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
     nextStress = Math.max(0, nextStress - weeklyRelief);
 
     if (isNewMonth) {
+      if (state.isOwnedRealEstate && (nextMonth === 7 || nextMonth === 9)) {
+        const propertyTax = Math.floor(state.currentRealEstate.deposit * 0.0015);
+        if (propertyTax > 0) {
+           nextCash -= propertyTax;
+           nextSystemAlerts.push({
+             id: getNextMessageId(),
+             title: "재산세 납부 알림",
+             message: `보유하신 자가 주택에 대한 재산세가 청구되었습니다.\n\n💰 현금: -${propertyTax.toLocaleString()}원`,
+             type: 'bad'
+           });
+           nextChatMessages.push({
+             id: getNextMessageId(),
+             sender: "국세청",
+             text: `[재산세 납부 안내] 보유하신 주택에 대한 재산세 ${propertyTax.toLocaleString()}원이 자동 납부되었습니다.`,
+             isRead: false,
+             room: 'system',
+             date: currentDateStr
+           });
+        }
+      }
+
       nextCash = nextCash + nextSalary + monthlyDividends - nextLivingCost - monthlyRent - monthlyInterest;
       nextDeposit += monthlyDepositInterest;
       
@@ -969,6 +1037,20 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
       }
     }
 
+    // ──────── 카톡 메시지 최적화 (방별로 최근 30개만 유지) ────────
+    const MAX_MESSAGES_PER_ROOM = 30;
+    const messagesByRoom: Record<string, typeof nextChatMessages> = {};
+    nextChatMessages.forEach(msg => {
+      if (!messagesByRoom[msg.room]) messagesByRoom[msg.room] = [];
+      messagesByRoom[msg.room].push(msg);
+    });
+    
+    const optimizedChatMessages: typeof nextChatMessages = [];
+    Object.values(messagesByRoom).forEach(roomMessages => {
+      optimizedChatMessages.push(...roomMessages.slice(-MAX_MESSAGES_PER_ROOM));
+    });
+    optimizedChatMessages.sort((a, b) => a.id - b.id);
+
     set({
       year: nextYear,
       month: nextMonth,
@@ -992,12 +1074,13 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
       lottoTickets: [], // 다음 턴으로 넘어가면 기존 티켓 초기화
       lastLottoResult: lottoRes,
       lottoPrizeMultiplier: nextLottoPrizeMultiplier,
-      chatMessages: nextChatMessages,
+      chatMessages: optimizedChatMessages,
       activeRumors: nextActiveRumors,
       isGameOver: nextIsGameOver,
       isGameWon: nextIsGameWon,
       clearedCount: nextClearedCount,
-      endGameReason: nextEndGameReason
+      endGameReason: nextEndGameReason,
+      systemAlerts: [...state.systemAlerts, ...nextSystemAlerts]
     });
 
     if (!nextIsGameOver) {
@@ -1060,12 +1143,24 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
       const newAmount = currentItem.amount + amount;
       const newAveragePrice = ((currentItem.averagePrice * currentItem.amount) + totalCost) / newAmount;
       
+      const newTrade: TradeRecord = {
+        id: Date.now(),
+        date: `${state.year}년 ${state.month}월 ${state.week}주차`,
+        stockId,
+        stockName: INITIAL_STOCKS.find(s => s.id === stockId)?.name || stockId,
+        type: 'buy',
+        amount,
+        price,
+        totalAmount: totalCost
+      };
+
       set({
         cash: state.cash - totalCost,
         portfolio: {
           ...state.portfolio,
           [stockId]: { stockId, amount: newAmount, averagePrice: newAveragePrice }
-        }
+        },
+        tradeHistory: [newTrade, ...state.tradeHistory].slice(0, 200)
       });
       get().unlockAchievement('first_blood');
       soundManager.playClick();
@@ -1138,9 +1233,26 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
         newPortfolio[stockId] = { ...currentItem, amount: newAmount };
       }
       
+      const realizedProfit = totalRevenue - (currentItem.averagePrice * amount);
+      const realizedProfitRate = currentItem.averagePrice > 0 ? ((price - currentItem.averagePrice) / currentItem.averagePrice) * 100 : 0;
+
+      const newTrade: TradeRecord = {
+        id: Date.now(),
+        date: `${state.year}년 ${state.month}월 ${state.week}주차`,
+        stockId,
+        stockName: INITIAL_STOCKS.find(s => s.id === stockId)?.name || stockId,
+        type: 'sell',
+        amount,
+        price,
+        totalAmount: totalRevenue,
+        realizedProfit,
+        realizedProfitRate
+      };
+
       set({
         cash: state.cash + totalRevenue,
-        portfolio: newPortfolio
+        portfolio: newPortfolio,
+        tradeHistory: [newTrade, ...state.tradeHistory].slice(0, 200)
       });
       soundManager.playCash();
       hapticManager.success();
@@ -1273,6 +1385,12 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
     set({ hasReadNews: true });
   },
 
+  removeSystemAlert: (id: number) => {
+    set(state => ({
+      systemAlerts: state.systemAlerts.filter(a => a.id !== id)
+    }));
+  },
+
   resetGame: () => {
     messageIdCounter = 100;
     const state = get();
@@ -1290,7 +1408,17 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
 }), {
   name: 'escape2015-game-state',
   version: 1,
-  storage: createJSONStorage(() => localStorage),
+  storage: createJSONStorage(() => ({
+    getItem: (name) => {
+      try { return localStorage.getItem(name); } catch (e) { return null; }
+    },
+    setItem: (name, value) => {
+      try { localStorage.setItem(name, value); } catch (e) { /* ignore */ }
+    },
+    removeItem: (name) => {
+      try { localStorage.removeItem(name); } catch (e) { /* ignore */ }
+    }
+  })),
   skipHydration: true,
   partialize: (state) => ({
     year: state.year,
@@ -1329,7 +1457,8 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
     clearedCount: state.clearedCount,
     currentBackgroundId: state.currentBackgroundId,
     soundEnabled: state.soundEnabled,
-    hapticEnabled: state.hapticEnabled
+    hapticEnabled: state.hapticEnabled,
+    tradeHistory: state.tradeHistory
   }),
   merge: (persistedState, currentState) => {
     const savedState = persistedState as Partial<GameState>;

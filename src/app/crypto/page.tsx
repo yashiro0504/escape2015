@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, TrendingUp, TrendingDown, Bitcoin } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Bitcoin, PieChart, History } from "lucide-react";
 import { useGameStore } from "@/store/gameStore";
 import { calculatePriceChange } from "@/utils/calculatePriceChange";
 
@@ -123,8 +123,12 @@ export default function CryptoApp() {
           <span className="font-bold">코인목록</span>
         </Link>
         <Link href="/crypto/portfolio" className="flex flex-col items-center active:scale-95 transition-transform">
-          <div className="w-5 h-5 border-2 border-white/40 rounded mb-1"></div>
+          <PieChart size={20} className="mb-1" />
           <span>잔고</span>
+        </Link>
+        <Link href="/crypto/history" className="flex flex-col items-center active:scale-95 transition-transform">
+          <History size={20} className="mb-1" />
+          <span>거래내역</span>
         </Link>
       </div>
     </div>

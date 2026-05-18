@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
-import { MessageCircle, LineChart, Bitcoin, Landmark, Gamepad2, Settings, CalendarDays, Ticket, Building, Briefcase, Heart, Zap, TrendingUp, TrendingDown, ChevronRight, Coffee } from "lucide-react";
+import { MessageCircle, LineChart, Bitcoin, Landmark, Gamepad2, Settings, CalendarDays, Ticket, Building, Briefcase, Heart, Zap, TrendingUp, TrendingDown, ChevronRight, Coffee, BarChart3 } from "lucide-react";
 import { useGameStore, getPortfolioValue, getTargetGoal, getTargetGoalLabel } from "@/store/gameStore";
 import StartScreen from "@/components/StartScreen";
 import EndScreen from "@/components/EndScreen";
@@ -127,6 +127,12 @@ export default function Home() {
       gradient: "from-yellow-400 to-yellow-500",
       href: "/chat",
       badge: unreadChatCount > 0 ? unreadChatCount : undefined,
+    },
+    {
+      name: "내 자산",
+      icon: <BarChart3 size={28} className="text-white" />,
+      gradient: "from-violet-600 to-indigo-700",
+      href: "/assets",
     },
     {
       name: "설정",
@@ -296,10 +302,10 @@ export default function Home() {
 
       {/* ─── 하단 독 (Dock) ─── */}
       <div className="absolute bottom-0 left-0 right-0 z-40 animate-slide-in-bottom" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 8px), 8px)' }}>
-        <div className="mx-3 mb-2 h-[76px] glass rounded-3xl flex items-center justify-around px-6 shadow-2xl">
+        <div className="mx-3 mb-2 h-[72px] glass rounded-3xl flex items-center justify-around px-4 shadow-2xl">
         {dockApps.map((app) => (
           <Link href={app.href} key={app.name} className="flex flex-col items-center relative group">
-            <div className={`w-[56px] h-[56px] rounded-[15px] bg-gradient-to-br ${app.gradient} flex items-center justify-center shadow-lg`}>
+            <div className={`w-[50px] h-[50px] rounded-[14px] bg-gradient-to-br ${app.gradient} flex items-center justify-center shadow-lg`}>
               {app.icon}
             </div>
             {app.badge && (

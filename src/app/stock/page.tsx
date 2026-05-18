@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, TrendingUp, TrendingDown } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, PieChart, History } from "lucide-react";
 import { useGameStore } from "@/store/gameStore";
 
 export default function StockApp() {
@@ -77,8 +77,12 @@ export default function StockApp() {
           <span className="font-bold">관심종목</span>
         </Link>
         <Link href="/stock/portfolio" className="flex flex-col items-center active:scale-95 transition-transform">
-          <div className="w-5 h-5 border-2 border-zinc-400 rounded mb-1"></div>
+          <PieChart size={20} className="mb-1" />
           <span>잔고</span>
+        </Link>
+        <Link href="/stock/history" className="flex flex-col items-center active:scale-95 transition-transform">
+          <History size={20} className="mb-1" />
+          <span>거래내역</span>
         </Link>
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, PieChart, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { ArrowLeft, PieChart, TrendingDown, TrendingUp, Wallet, History } from "lucide-react";
 import { useGameStore } from "@/store/gameStore";
 import { calculatePriceChange } from "@/utils/calculatePriceChange";
 
@@ -158,6 +158,10 @@ export default function StockPortfolioApp() {
         <Link href="/stock/portfolio" className="flex flex-col items-center text-red-600 active:scale-95 transition-transform">
           <PieChart size={20} className="mb-1" />
           <span className="font-bold">잔고</span>
+        </Link>
+        <Link href="/stock/history" className="flex flex-col items-center active:scale-95 transition-transform">
+          <History size={20} className="mb-1" />
+          <span>거래내역</span>
         </Link>
       </div>
     </div>
