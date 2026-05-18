@@ -1458,7 +1458,8 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
     currentBackgroundId: state.currentBackgroundId,
     soundEnabled: state.soundEnabled,
     hapticEnabled: state.hapticEnabled,
-    tradeHistory: state.tradeHistory
+    tradeHistory: state.tradeHistory,
+    unlockedAchievements: state.unlockedAchievements
   }),
   merge: (persistedState, currentState) => {
     const savedState = persistedState as Partial<GameState>;
